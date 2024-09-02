@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
-from LogType import LogType
-from Policy import Policy
+from .LogType import LogType
+from .Policy import Policy
 
 class NFQueue:
     """

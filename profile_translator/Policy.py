@@ -4,10 +4,10 @@ from enum import Enum
 from typing import Tuple, Dict
 import ipaddress
 ## Custom libraries
-from LogType import LogType
+from .LogType import LogType
 # Protocol translators
-from protocols.Protocol import Protocol
-from protocols.ip import ip
+from .protocols.Protocol import Protocol
+from .protocols.ip import ip
 
 
 class Policy:

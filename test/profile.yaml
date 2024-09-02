@@ -1,0 +1,32 @@
+device-info:
+  ipv4: 192.168.1.135
+  last-update: Mon 12 Aug 2024, 05:25PM
+  name: tplink-plug
+single-policies:
+  dns_A_use1-api.tplinkra.com:
+    bidirectional: true
+    protocols:
+      dns:
+        domain-name: use1-api.tplinkra.com
+        qtype: A
+      ipv4:
+        dst: 192.168.1.1
+        src: self
+      udp:
+        dst-port: 53
+  tcp_443:
+    bidirectional: true
+    protocols:
+      ipv4:
+        dst: use1-api.tplinkra.com
+        src: self
+      tcp:
+        dst-port: 443
+  tcp_9999:
+    bidirectional: true
+    protocols:
+      ipv4:
+        dst: self
+        src: 192.168.1.110
+      tcp:
+        dst-port: 9999

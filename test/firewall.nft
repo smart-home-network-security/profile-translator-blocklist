@@ -1,0 +1,18 @@
+#!/usr/sbin/nft -f
+
+table bridge tplink-plug {
+
+    # Chain PREROUTING, entry point for all traffic
+    chain prerouting {
+        
+        # Base chain, need configuration
+        # Default policy is ACCEPT
+        type filter hook prerouting priority 0; policy accept;
+
+        # NFQueue dns_A_use1-api.tplinkra.com
+        drop
+        
+        
+    }
+
+}
