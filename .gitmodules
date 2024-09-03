@@ -1,0 +1,3 @@
+[submodule "profile_translator_blocklist/protocols"]
+	path = profile_translator_blocklist/protocols
+	url = git@github.com:smart-home-network-security/protocol-translators-blocklist.git
