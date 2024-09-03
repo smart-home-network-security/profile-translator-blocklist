@@ -13,12 +13,12 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: pip install -r $GITHUB_WORKSPACE/requirements.txt
+        run: pip3 install -r $GITHUB_WORKSPACE/requirements.txt
 
       - name: Build and install package
         run: |
           python3 -m build
-          pip install $GITHUB_WORKSPACE
+          pip3 install $GITHUB_WORKSPACE
 
       - name: Run tests
         run: python3 test/test.py

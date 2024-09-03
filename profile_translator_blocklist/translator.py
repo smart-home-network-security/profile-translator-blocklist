@@ -3,25 +3,22 @@ Translate a device YAML profile to the corresponding pair
 of NFTables firewall script and NFQueue C source code.
 """
 
-# Import packages
+## Imports
+# Libraries
 import os
-#import sys
-from pathlib import Path
+import importlib
 import yaml
 import jinja2
 from typing import Tuple
-
-# Paths
-self_name = os.path.basename(__file__)
-self_path = Path(os.path.abspath(__file__))
-self_dir = self_path.parents[0]
-
-# Import custom modules
+# Custom modules
 from .arg_types import uint16, proba, directory
 from .LogType import LogType
 from .Policy import Policy
 from .NFQueue import NFQueue
 from pyyaml_loaders import IncludeLoader
+
+# Package name
+package = importlib.import_module(__name__).__name__.rpartition(".")[0]
 
 
 
@@ -143,6 +140,8 @@ def translate_profile(
         log_group (int): Log group number (must be an integer between 0 and 65535)
         test (bool): Test mode: use VM instead of router
     """
+
+    ### INIT ###
     
     ## Argument validation
     # Retrieve device profile's path
@@ -163,8 +162,8 @@ def translate_profile(
         drop_proba = 1.0
     
 
-    ## Jinja2 loader
-    loader = jinja2.FileSystemLoader(searchpath=os.path.join(self_dir, "templates"))
+    ## Jinja2 config
+    loader = jinja2.PackageLoader(package, "templates")
     env = jinja2.Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
     # Add custom Jinja2 filters
     env.filters["debug"] = debug
@@ -229,7 +228,7 @@ def translate_profile(
                 nfqueue_id += nfq_id_inc
 
 
-    ### OUTPUT
+    ### OUTPUT ###
 
     # Create nftables script
     nft_dict = {
