@@ -12,39 +12,28 @@ import jinja2
 from typing import Tuple
 # Custom modules
 from .arg_types import uint16, proba, directory
+from .jinja_filters import debug, is_list
 from .LogType import LogType
 from .Policy import Policy
 from .NFQueue import NFQueue
 from pyyaml_loaders import IncludeLoader
 
+
 # Package name
 package = importlib.import_module(__name__).__name__.rpartition(".")[0]
 
-
-##### Custom Jinja2 filters #####
-
-def is_list(value: any) -> bool:
-    """
-    Custom filter for Jinja2, to check whether a value is a list.
-
-    :param value: value to check
-    :return: True if value is a list, False otherwise
-    """
-    return isinstance(value, list)
+## Jinja2 config
+loader = jinja2.PackageLoader(package, "templates")
+env = jinja2.Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
+# Add custom Jinja2 filters
+env.filters["debug"] = debug
+env.filters["is_list"] = is_list
+env.filters["any"] = any
+env.filters["all"] = all
 
 
-def debug(value: any) -> str:
-    """
-    Custom filter for Jinja2, to print a value.
 
-    :param value: value to print
-    :return: an empty string
-    """
-    print(str(value))
-    return ""
-
-
-##### Utility functions #####
+##### FUNCTIONS #####
 
 def flatten_policies(single_policy_name: str, single_policy: dict, acc: dict = {}) -> None:
     """
@@ -114,6 +103,177 @@ def parse_policy(policy_data: dict, nfqueue_id: int, global_accs: dict, rate: in
     return policy, new_nfq
 
 
+def validate_args(
+        output_dir: str = None,
+        nfqueue_id: int = 0,
+        rate:       int = None,
+        drop_proba: float = None,
+    ) -> dict:
+    """
+    Validate arguments for the translation process.
+
+    Args:
+        output_dir (str): Output directory for the generated files
+        nfqueue_id (int): NFQueue start index for this profile's policies (must be an integer between 0 and 65535)
+        rate (int): Rate limit, in packets/second, to apply to matched traffic, instead of a binary verdict
+        drop_proba (float): Dropping probability to apply to matched traffic, instead of a binary verdict
+    Raises:
+        ValueError: If rate and drop_proba are both provided
+    """
+    # Resulting arguments
+    args = {}
+
+    # Output directory: existing directory
+    # If not provided, use current directory
+    if output_dir is not None:
+        try:
+            output_dir = directory(output_dir)
+        except ValueError:
+            print(f"Output directory {output_dir} does not exist. Using current directory.")
+            output_dir = os.getcwd()
+    else:
+        output_dir = os.getcwd()
+    args["output_dir"] = output_dir
+
+    # NFQueue ID: integer between 0 and 65535
+    nfqueue_id = uint16(nfqueue_id)
+    args["nfqueue_id"] = nfqueue_id
+
+    # Verdict mode: rate or drop_proba (mutually exclusive)
+    if rate is not None and drop_proba is not None:
+        raise ValueError("Arguments rate and drop_proba are mutually exclusive")
+    args["rate"] = rate
+ 
+    # Drop probability: float between 0 and 1
+    if drop_proba is not None:
+        drop_proba = proba(drop_proba)
+    else:
+        drop_proba = 1.0
+    args["drop_proba"] = drop_proba
+
+    return args
+
+
+def write_firewall(
+        device:       dict,
+        global_accs:  dict,
+        nfqueue_name: str     = None,
+        output_dir:   str     = None,
+        drop_proba:   float   = 1.0,
+        log_type:     LogType = LogType.NONE,
+        log_group:    int     = 100,
+        test:         bool    = False
+    ) -> None:
+    """
+    Write NFTables firewall script and NFQueue C source code with given parameters.
+
+    Args:
+        device (dict): Device metadata
+        global_accs (dict): Global accumulators containing policy data
+        nfqueue_name (str): Name of the device's NFQueue
+        output_dir (str): Output directory for the generated files
+        drop_proba (float): Dropping probability to apply to matched traffic, instead of a binary verdict
+        log_type (LogType): Type of packet logging to be used
+        log_group (int): Log group number (must be an integer between 0 and 65535)
+        test (bool): Test mode: use VM instead of router
+    """
+    args = validate_args(output_dir=output_dir, drop_proba=drop_proba)
+    drop_proba = args["drop_proba"]
+
+    # Create nftables script
+    nft_dict = {
+        "device": device,
+        "nfqueues": global_accs["nfqueues"],
+        "drop_proba": drop_proba,
+        "log_type": log_type,
+        "log_group": log_group,
+        "test": test
+    }
+    env.get_template("firewall.nft.j2").stream(nft_dict).dump(os.path.join(output_dir, "firewall.nft"))
+
+    # If needed, create NFQueue-related files
+    num_threads = len([q for q in global_accs["nfqueues"] if q.queue_num >= 0])
+    if num_threads > 0:
+        # Create nfqueue C file by rendering Jinja2 templates
+        header_dict = {
+            "device": device["name"],
+            "custom_parsers": global_accs["custom_parsers"],
+            "domain_names": global_accs["domain_names"],
+            "drop_proba": drop_proba,
+            "num_threads": num_threads,
+        }
+        header = env.get_template("header.c.j2").render(header_dict)
+        callback_dict = {
+            "nft_table": f"bridge {device['name']}",
+            "nfqueues": global_accs["nfqueues"],
+            "drop_proba": drop_proba
+        }
+        callback = env.get_template("callback.c.j2").render(callback_dict)
+        main_dict = {
+            "custom_parsers": global_accs["custom_parsers"],
+            "nfqueues": global_accs["nfqueues"],
+            "domain_names": global_accs["domain_names"],
+            "num_threads": num_threads
+        }
+        main = env.get_template("main.c.j2").render(main_dict)
+
+        # Write policy C file
+        with open(os.path.join(output_dir, "nfqueues.c"), "w+") as fw:
+            fw.write(header)
+            fw.write(callback)
+            fw.write(main)
+
+        # Create CMake file
+        custom_parsers = " ".join(global_accs["custom_parsers"])
+        cmake_dict = {
+            "device":  device["name"],
+            "nfqueue_name": nfqueue_name,
+            "custom_parsers": custom_parsers
+        }
+        env.get_template("CMakeLists.txt.j2").stream(cmake_dict).dump(os.path.join(output_dir, "CMakeLists.txt"))
+
+
+def translate_policy(
+        device: dict,
+        policy_data:  dict,
+        nfqueue_id:   int     = 0,
+        output_dir:   str     = None,
+        rate:         int     = None,
+        drop_proba:   float   = None,
+        log_type:     LogType = LogType.NONE,
+        log_group:    int     = 100,
+        test:         bool    = False
+    ) -> None:
+    """
+    Translate a Policy object to the corresponding pair of NFTables firewall script and NFQueue C source code.
+
+    Args:
+        device (dict): Device metadata
+        policy (Policy): Policy object to translate
+        nfqueue_id (int): NFQueue start index for this profile's policies (must be an integer between 0 and 65535)
+        output_dir (str): Output directory for the generated files
+    """
+    ## Argument validation
+    args = validate_args(output_dir, nfqueue_id, rate, drop_proba)
+    output_dir = args["output_dir"]
+    drop_proba = args["drop_proba"]
+
+    ## Parse policy
+
+    # Global accumulators
+    global_accs = {
+        "custom_parsers": set(),
+        "nfqueues": [],
+        "domain_names": []
+    }
+
+    parse_policy(policy_data, nfqueue_id, global_accs)
+
+    ## Output
+    write_firewall(device, global_accs, drop_proba=drop_proba, output_dir=output_dir, log_type=log_type, log_group=log_group, test=test)
+
+
+
 def translate_profile(
         profile_path: str,
         nfqueue_name: str     = None,
@@ -139,36 +299,16 @@ def translate_profile(
         log_group (int): Log group number (must be an integer between 0 and 65535)
         test (bool): Test mode: use VM instead of router
     """
-
-    ### INIT ###
-    
-    ## Argument validation
     # Retrieve device profile's path
     device_path = os.path.abspath(os.path.dirname(profile_path))
     if output_dir is None:
         output_dir = device_path
-    # Validate NFQueue ID
-    nfqueue_id = uint16(nfqueue_id)
-    # Validate output directory
-    output_dir = directory(output_dir)
-    # Verify verdict mode
-    if rate is not None and drop_proba is not None:
-        raise ValueError("Arguments rate and drop_proba are mutually exclusive")
-    # Validate drop probability
-    if drop_proba is not None:
-        drop_proba = proba(drop_proba)
-    else:
-        drop_proba = 1.0
-    
-
-    ## Jinja2 config
-    loader = jinja2.PackageLoader(package, "templates")
-    env = jinja2.Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
-    # Add custom Jinja2 filters
-    env.filters["debug"] = debug
-    env.filters["is_list"] = is_list
-    env.filters["any"] = any
-    env.filters["all"] = all
+    # Argument validation
+    args = validate_args(output_dir, nfqueue_id, rate, drop_proba)
+    output_dir = args["output_dir"]
+    nfqueue_id = args["nfqueue_id"]
+    rate = args["rate"]
+    drop_proba = args["drop_proba"]
 
 
     ### MAIN ###
@@ -229,57 +369,6 @@ def translate_profile(
 
     ### OUTPUT ###
 
-    # Create nftables script
-    nft_dict = {
-        "device": device,
-        "nfqueues": global_accs["nfqueues"],
-        "drop_proba": drop_proba,
-        "log_type": log_type,
-        "log_group": log_group,
-        "test": test
-    }
-    env.get_template("firewall.nft.j2").stream(nft_dict).dump(os.path.join(output_dir, "firewall.nft"))
-
-    # If needed, create NFQueue-related files
-    num_threads = len([q for q in global_accs["nfqueues"] if q.queue_num >= 0])
-    if num_threads > 0:
-        # Create nfqueue C file by rendering Jinja2 templates
-        header_dict = {
-            "device": device["name"],
-            "custom_parsers": global_accs["custom_parsers"],
-            "domain_names": global_accs["domain_names"],
-            "drop_proba": drop_proba,
-            "num_threads": num_threads,
-        }
-        header = env.get_template("header.c.j2").render(header_dict)
-        callback_dict = {
-            "nft_table": f"bridge {device['name']}",
-            "nfqueues": global_accs["nfqueues"],
-            "drop_proba": drop_proba
-        }
-        callback = env.get_template("callback.c.j2").render(callback_dict)
-        main_dict = {
-            "custom_parsers": global_accs["custom_parsers"],
-            "nfqueues": global_accs["nfqueues"],
-            "domain_names": global_accs["domain_names"],
-            "num_threads": num_threads
-        }
-        main = env.get_template("main.c.j2").render(main_dict)
-
-        # Write policy C file
-        with open(os.path.join(output_dir, "nfqueues.c"), "w+") as fw:
-            fw.write(header)
-            fw.write(callback)
-            fw.write(main)
-
-        # Create CMake file
-        custom_parsers = " ".join(global_accs["custom_parsers"])
-        cmake_dict = {
-            "device":  device["name"],
-            "nfqueue_name": nfqueue_name,
-            "custom_parsers": custom_parsers
-        }
-        env.get_template("CMakeLists.txt.j2").stream(cmake_dict).dump(os.path.join(output_dir, "CMakeLists.txt"))
-
+    write_firewall(device, global_accs, nfqueue_name, output_dir, drop_proba, log_type, log_group, test)
 
     print(f"Done translating {profile_path}.")
