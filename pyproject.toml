@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "profile-translator-blocklist"
+version = "0.1.0"
+description = "Translate IoT YAML profiles to NFTables / NFQueue files for a block-list firewall."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = ["yaml", "firewall", "nftables", "nfqueue"]
+authors = [
+  {name = "François De Keersmaeker", email = "francois.dekeersmaeker@uclouvain.be" }
+]
+maintainers = [
+  {name = "François De Keersmaeker", email = "francois.dekeersmaeker@uclouvain.be" }
+]
+
+# Classifiers help users find your project by categorizing it.
+#
+# For a list of valid classifiers, see https://pypi.org/classifiers/
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 3 - Alpha",
+
+  # Pick your license as you wish
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+
+  # Specify the Python versions you support here. In particular, ensure
+  # that you indicate you support Python 3. These classifiers are *not*
+  # checked by "pip install". See instead "requires-python" key in this file.
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+
+  "Operating System :: OS Independent"
+]
+
+dependencies = [
+  "PyYAML",
+  "Jinja2",
+  "pyyaml-loaders"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/smart-home-network-security/profile-translator-blocklist"
+"Source" = "https://github.com/smart-home-network-security/profile-translator-blocklist"
+
+
+## Additional files
+[tool.setuptools.package-data]
+"profile_translator_blocklist" = [
+  "templates/*"
+]

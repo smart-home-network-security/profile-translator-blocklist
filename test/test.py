@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import unittest
-import profile_translator
+import profile_translator_blocklist
 
 # Paths
 self_name = os.path.basename(__file__)
@@ -16,7 +16,7 @@ class TestProfileTranslator(unittest.TestCase):
     """
     
     def test_translate_profile(self):
-        profile_translator.translate_profile(sample_profile)
+        profile_translator_blocklist.translate_profile(sample_profile)
 
 
 ### MAIN ###
