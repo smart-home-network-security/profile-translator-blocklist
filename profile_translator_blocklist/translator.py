@@ -21,7 +21,6 @@ from pyyaml_loaders import IncludeLoader
 package = importlib.import_module(__name__).__name__.rpartition(".")[0]
 
 
-
 ##### Custom Jinja2 filters #####
 
 def is_list(value: any) -> bool:
