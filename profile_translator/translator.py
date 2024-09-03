@@ -15,7 +15,6 @@ from typing import Tuple
 self_name = os.path.basename(__file__)
 self_path = Path(os.path.abspath(__file__))
 self_dir = self_path.parents[0]
-#sys.path.insert(0, os.path.join(self_dir, "protocols"))
 
 # Import custom modules
 from .arg_types import uint16, proba, directory
@@ -229,6 +228,8 @@ def translate_profile(
             if new_nfq:
                 nfqueue_id += nfq_id_inc
 
+
+    ### OUTPUT
 
     # Create nftables script
     nft_dict = {

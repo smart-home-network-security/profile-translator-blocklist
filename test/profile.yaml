@@ -1,6 +1,5 @@
 device-info:
   ipv4: 192.168.1.135
-  last-update: Mon 12 Aug 2024, 05:25PM
   name: tplink-plug
 single-policies:
   dns_A_use1-api.tplinkra.com:

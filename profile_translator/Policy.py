@@ -73,6 +73,7 @@ class Policy:
                 profile_protocol = self.profile_data["protocols"][protocol_name]
                 protocol = Protocol.init_protocol(protocol_name, profile_protocol, self.device)
             except ModuleNotFoundError:
+                print(f"Protocol {protocol_name} not found.")
                 # Unsupported protocol, skip it
                 continue
             else:
@@ -136,8 +137,8 @@ class Policy:
                 # Add nfqueue matches
                 for match in new_rules["nfq"]:
                     self.nfq_matches.append(match)
-        
-        
+
+
         ### Parse statistics
         if "stats" in self.profile_data:
             for stat in self.profile_data["stats"]:
@@ -345,87 +346,6 @@ class Policy:
         :return: complete nftables rule for this policy
         """
         return f"{self.nft_match} {self.nft_action}"
-
-    
-    def parse(self) -> None:
-        """
-        Parse the policy and populate the related instance variables.
-        """
-        # Parse protocols
-        for protocol_name in self.profile_data["protocols"]:
-            try:
-                profile_protocol = self.profile_data["protocols"][protocol_name]
-                protocol = Protocol.init_protocol(protocol_name, profile_protocol, self.device)
-            except ModuleNotFoundError:
-                # Unsupported protocol, skip it
-                continue
-            else:
-                # Protocol is supported, parse it
-
-                # Add custom parser if needed
-                if protocol.custom_parser:
-                    self.custom_parser = protocol_name
-                
-                ### Check involved devices
-                protocols = ["arp", "ipv4", "ipv6"]
-                # This device's addresses
-                addrs = ["mac", "ipv4", "ipv6"]
-                self_addrs = ["self"]
-                for addr in addrs:
-                    device_addr = self.device.get(addr, None)
-                    if device_addr is not None:
-                        self_addrs.append(device_addr)
-                if protocol_name in protocols:
-                    ip_proto = "ipv6" if protocol_name == "ipv6" else "ipv4"
-                    src = profile_protocol.get("spa", None) if protocol_name == "arp" else profile_protocol.get("src", None)
-                    dst = profile_protocol.get("tpa", None) if protocol_name == "arp" else profile_protocol.get("dst", None)
-                    
-                    # Check if device is involved
-                    if src in self_addrs or dst in self_addrs:
-                        self.is_device = True
-                    
-                    # Device is not involved
-                    else:
-                        # Try expliciting source address
-                        try:
-                            saddr = ipaddress.ip_network(protocol.explicit_address(src))
-                        except ValueError:
-                            saddr = None
-                        
-                        # Try expliciting destination address
-                        try:
-                            daddr = ipaddress.ip_network(protocol.explicit_address(dst))
-                        except ValueError:
-                            daddr = None
-
-                        # Check if the involved other host is in the local network
-                        local_networks = ip.addrs[ip_proto]["local"]
-                        if isinstance(local_networks, list):
-                            lans = map(lambda cidr: ipaddress.ip_network(cidr), local_networks)
-                        else:
-                            lans = [ipaddress.ip_network(local_networks)]
-                        if saddr is not None and any(lan.supernet_of(saddr) for lan in lans):
-                            self.other_host["protocol"] = protocol_name
-                            self.other_host["direction"] = "src"
-                            self.other_host["address"] = saddr
-                        elif daddr is not None and any(lan.supernet_of(daddr) for lan in lans):
-                            self.other_host["protocol"] = protocol_name
-                            self.other_host["direction"] = "dst"
-                            self.other_host["address"] = daddr
-
-                # Add nft rules
-                new_rules = protocol.parse(is_backward=self.is_backward, initiator=self.initiator)
-                self.nft_matches += new_rules["nft"]
-
-                # Add nfqueue matches
-                for match in new_rules["nfq"]:
-                    self.nfq_matches.append(match)
-        
-        # Parse statistics
-        if "stats" in self.profile_data:
-            for stat in self.profile_data["stats"]:
-                if stat in Policy.stats_metadata:
-                    self.parse_stat(stat)
 
     
     def get_domain_name_hosts(self) -> Tuple[str, dict]:

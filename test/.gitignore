@@ -1,2 +1,7 @@
 # Package test files
 !test.py
+
+# Output files
+*.nft
+*.c
+CMakeLists.txt
