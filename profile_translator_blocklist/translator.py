@@ -112,7 +112,7 @@ def parse_policy(
 
 
 def validate_args(
-        output_dir: str = None,
+        output_dir: str = os.getcwd(),
         nfqueue_id: int = 0,
         rate:       int = None,
         drop_proba: float = None,
@@ -128,18 +128,14 @@ def validate_args(
     Raises:
         ValueError: If rate and drop_proba are both provided
     """
-    # Resulting arguments
+    # Initialize result dictionary
     args = {}
 
     # Output directory: existing directory
-    # If not provided, use current directory
-    if output_dir is not None:
-        try:
-            output_dir = directory(output_dir)
-        except ValueError:
-            print(f"Output directory {output_dir} does not exist. Using current directory.")
-            output_dir = os.getcwd()
-    else:
+    try:
+        output_dir = directory(output_dir)
+    except ValueError:
+        print(f"Output directory {output_dir} does not exist. Using current directory.")
         output_dir = os.getcwd()
     args["output_dir"] = output_dir
 
@@ -166,7 +162,7 @@ def write_firewall(
         device:       dict,
         global_accs:  dict,
         nfqueue_name: str     = None,
-        output_dir:   str     = None,
+        output_dir:   str     = os.getcwd(),
         drop_proba:   float   = 1.0,
         log_type:     LogType = LogType.NONE,
         log_group:    int     = 100,
@@ -245,7 +241,7 @@ def translate_policy(
         device:       dict,
         policy_dict:  dict,
         nfqueue_id:   int     = 0,
-        output_dir:   str     = None,
+        output_dir:   str     = os.getcwd(),
         rate:         int     = None,
         drop_proba:   float   = None,
         log_type:     LogType = LogType.NONE,
@@ -294,7 +290,7 @@ def translate_profile(
         profile_path: str,
         nfqueue_name: str     = None,
         nfqueue_id:   int     = 0,
-        output_dir:   str     = None,
+        output_dir:   str     = os.getcwd(),
         rate:         int     = None,
         drop_proba:   float   = None,
         log_type:     LogType = LogType.NONE,
