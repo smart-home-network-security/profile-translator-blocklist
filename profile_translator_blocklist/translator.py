@@ -257,9 +257,14 @@ def translate_policy(
 
     Args:
         device (dict): Device metadata
-        policy (Policy): Policy object to translate
+        policy_dict (dict): Policy data
         nfqueue_id (int): NFQueue start index for this profile's policies (must be an integer between 0 and 65535)
         output_dir (str): Output directory for the generated files
+        rate (int): Rate limit, in packets/second, to apply to matched traffic, instead of a binary verdict
+        drop_proba (float): Dropping probability to apply to matched traffic, instead of a binary verdict
+        log_type (LogType): Type of packet logging to be used
+        log_group (int): Log group number (must be an integer between 0 and 65535)
+        test (bool): Test mode: use VM instead of router
     """
     ## Argument validation
     args = validate_args(output_dir, nfqueue_id, rate, drop_proba)
