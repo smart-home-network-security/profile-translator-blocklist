@@ -6,3 +6,8 @@ dist
 
 # Test files
 test.py
+
+# Output files
+*.nft
+*.c
+CMakeLists.txt

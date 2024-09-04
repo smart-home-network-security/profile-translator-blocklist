@@ -52,7 +52,15 @@ def flatten_policies(single_policy_name: str, single_policy: dict, acc: dict = {
             flatten_policies(subpolicy, single_policy[subpolicy], acc)
 
 
-def parse_policy(policy_data: dict, nfqueue_id: int, global_accs: dict, rate: int = None, drop_proba: float = 1.0,  log_type: LogType = LogType.NONE, log_group: int = 100) -> Tuple[Policy, bool]:
+def parse_policy(
+        policy_data: dict,
+        global_accs: dict,
+        nfqueue_id:  int     = 0,
+        rate:        int     = None,
+        drop_proba:  float   = 1.0,
+        log_type:    LogType = LogType.NONE,
+        log_group:   int     = 100
+    )-> Tuple[Policy, bool]:
     """
     Parse a policy.
 
@@ -234,8 +242,8 @@ def write_firewall(
 
 
 def translate_policy(
-        device: dict,
-        policy_data:  dict,
+        device:       dict,
+        policy_dict:  dict,
         nfqueue_id:   int     = 0,
         output_dir:   str     = None,
         rate:         int     = None,
@@ -258,16 +266,19 @@ def translate_policy(
     output_dir = args["output_dir"]
     drop_proba = args["drop_proba"]
 
-    ## Parse policy
+    ## Prepare policy data
+    policy_data = {
+        "profile_data": policy_dict,
+        "device": device
+    }
 
-    # Global accumulators
+    ## Parse policy
     global_accs = {
         "custom_parsers": set(),
         "nfqueues": [],
         "domain_names": []
     }
-
-    parse_policy(policy_data, nfqueue_id, global_accs)
+    parse_policy(policy_data, global_accs, nfqueue_id)
 
     ## Output
     write_firewall(device, global_accs, drop_proba=drop_proba, output_dir=output_dir, log_type=log_type, log_group=log_group, test=test)
@@ -350,7 +361,7 @@ def translate_profile(
             
             # Parse policy
             is_backward = profile_data.get("bidirectional", False)
-            policy, new_nfq = parse_policy(policy_data, nfqueue_id, global_accs, rate, drop_proba, log_type, log_group)
+            policy, new_nfq = parse_policy(policy_data, global_accs, nfqueue_id, rate, drop_proba, log_type, log_group)
 
             # Parse policy in backward direction, if needed
             if is_backward:
@@ -360,7 +371,7 @@ def translate_profile(
                     "policy_name": f"{policy_name}-backward",
                     "is_backward": True
                 }
-                policy_backward, new_nfq = parse_policy(policy_data_backward, nfqueue_id + 1, global_accs, rate, drop_proba, log_type, log_group)
+                policy_backward, new_nfq = parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
 
             # Update nfqueue variables if needed
             if new_nfq:
