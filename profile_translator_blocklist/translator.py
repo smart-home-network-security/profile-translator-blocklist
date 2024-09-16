@@ -5,7 +5,7 @@ of NFTables firewall script and NFQueue C source code.
 
 ## Imports
 # Libraries
-from typing import List
+from typing import Iterator
 import os
 import importlib
 import yaml
@@ -296,7 +296,7 @@ def translate_policy(
 
 def translate_policies(
         device:       dict,
-        policies:     List[dict],
+        policies:     Iterator[dict],
         nfqueue_id:   int     = 0,
         output_dir:   str     = os.getcwd(),
         rate:         int     = None,
@@ -310,7 +310,7 @@ def translate_policies(
 
     Args:
         device (dict): Device metadata
-        policies (list): list of policies
+        policies (Iterator[dict]): iterator over policies
         nfqueue_id (int): NFQueue start index for this profile's policies (must be an integer between 0 and 65535)
         output_dir (str): Output directory for the generated files
         rate (int): Rate limit, in packets/second, to apply to matched traffic, instead of a binary verdict
