@@ -50,7 +50,7 @@ class Policy:
         self.nft_matches = []                     # List of nftables matches (will be populated by parsing)
         self.nft_match = ""                       # Complete nftables match (including rate and packet size)
         self.nft_stats = {}                       # Dict of nftables statistics (will be populated by parsing)
-        self.queue_num = -1                       # Number of the nfqueue queue corresponding (will be updated by parsing)
+        self.queue_num = -1                       # Number of the corresponding NFQueue (will be updated by parsing)
         self.nft_action = ""                      # nftables action associated to this policy
         self.nfq_matches = []                     # List of nfqueue matches (will be populated by parsing)
         self.profile_data = profile_data          # Policy data from the YAML profile
@@ -60,7 +60,7 @@ class Policy:
         self.parse()
 
         # Set policy name
-        self.name = policy_name if policy_name is not None else self.get_policy_id()
+        self.name = policy_name if policy_name is not None else self.get_policy_name()
 
     
     def parse(self) -> None:
@@ -453,7 +453,7 @@ class Policy:
         return result
 
 
-    def get_policy_id(self) -> str:
+    def get_name(self) -> str:
         """
         Generate an identifier for this Policy.
 
@@ -464,4 +464,3 @@ class Policy:
         for _, value in dict.items(self.profile_data["protocols"][highest_protocol]):
             id += f"_{value}"
         return id
-    

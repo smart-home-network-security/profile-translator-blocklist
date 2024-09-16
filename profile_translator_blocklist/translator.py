@@ -5,6 +5,7 @@ of NFTables firewall script and NFQueue C source code.
 
 ## Imports
 # Libraries
+from typing import List
 import os
 import importlib
 import yaml
@@ -60,7 +61,7 @@ def parse_policy(
         drop_proba:  float   = 1.0,
         log_type:    LogType = LogType.NONE,
         log_group:   int     = 100
-    )-> Tuple[Policy, bool]:
+    ) -> Tuple[Policy, bool]:
     """
     Parse a policy.
 
@@ -249,7 +250,7 @@ def translate_policy(
         test:         bool    = False
     ) -> None:
     """
-    Translate a Policy object to the corresponding pair of NFTables firewall script and NFQueue C source code.
+    Translate a policy to the corresponding pair of NFTables firewall script and NFQueue C source code.
 
     Args:
         device (dict): Device metadata
@@ -279,10 +280,85 @@ def translate_policy(
         "nfqueues": [],
         "domain_names": []
     }
-    parse_policy(policy_data, global_accs, nfqueue_id)
+    policy, _ = parse_policy(policy_data, global_accs, nfqueue_id, rate, drop_proba, log_type, log_group)
+    if policy_dict.get("bidirectional", False):
+        policy_data_backward = {
+            "profile_data": policy_dict,
+            "device": device,
+            "policy_name": f"{policy.get_name()}-backward",
+            "is_backward": True
+        }
+        parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
 
     ## Output
     write_firewall(device, global_accs, drop_proba=drop_proba, output_dir=output_dir, log_type=log_type, log_group=log_group, test=test)
+
+
+def translate_policies(
+        device:       dict,
+        policies:     List[dict],
+        nfqueue_id:   int     = 0,
+        output_dir:   str     = os.getcwd(),
+        rate:         int     = None,
+        drop_proba:   float   = None,
+        log_type:     LogType = LogType.NONE,
+        log_group:    int     = 100,
+        test:         bool    = False
+) -> None:
+    """
+    Translate a list of policies to the corresponding pair of NFTables firewall script and NFQueue C source code.
+
+    Args:
+        device (dict): Device metadata
+        policies (list): list of policies
+        nfqueue_id (int): NFQueue start index for this profile's policies (must be an integer between 0 and 65535)
+        output_dir (str): Output directory for the generated files
+        rate (int): Rate limit, in packets/second, to apply to matched traffic, instead of a binary verdict
+        drop_proba (float): Dropping probability to apply to matched traffic, instead of a binary verdict
+        log_type (LogType): Type of packet logging to be used
+        log_group (int): Log group number (must be an integer between 0 and 65535)
+        test (bool): Test mode: use VM instead of router
+    """
+    # Argument validation
+    args = validate_args(output_dir, nfqueue_id, rate, drop_proba)
+    output_dir = args["output_dir"]
+    drop_proba = args["drop_proba"]
+
+    # Initialize loop variables
+    nfq_id_inc = 10
+    global_accs = {
+        "custom_parsers": set(),
+        "nfqueues": [],
+        "domain_names": []
+    }
+
+    # Loop over given policies
+    for policy_dict in policies:
+
+        # Forward
+        policy_data = {
+            "profile_data": policy_dict,
+            "device": device
+        }
+        policy, new_nfq_fwd = parse_policy(policy_data, global_accs, nfqueue_id, rate, drop_proba, log_type, log_group)
+
+        # Backward
+        if policy_dict.get("bidirectional", False):
+            policy_data_backward = {
+                "profile_data": policy_dict,
+                "device": device,
+                "policy_name": f"{policy.get_name()}-backward",
+                "is_backward": True
+            }
+            _, new_nfq_bwd = parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
+
+        # Increment nfqueue_id if needed
+        if new_nfq_fwd or new_nfq_bwd:
+            nfqueue_id += nfq_id_inc
+    
+    # Output
+    write_firewall(device, global_accs, drop_proba=drop_proba, output_dir=output_dir, log_type=log_type, log_group=log_group, test=test)
+
 
 
 
@@ -362,7 +438,7 @@ def translate_profile(
             
             # Parse policy
             is_backward = profile_data.get("bidirectional", False)
-            policy, new_nfq = parse_policy(policy_data, global_accs, nfqueue_id, rate, drop_proba, log_type, log_group)
+            _, new_nfq_fwd = parse_policy(policy_data, global_accs, nfqueue_id, rate, drop_proba, log_type, log_group)
 
             # Parse policy in backward direction, if needed
             if is_backward:
@@ -372,10 +448,10 @@ def translate_profile(
                     "policy_name": f"{policy_name}-backward",
                     "is_backward": True
                 }
-                policy_backward, new_nfq = parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
+                _, new_nfq_bwd = parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
 
             # Update nfqueue variables if needed
-            if new_nfq:
+            if new_nfq_fwd or new_nfq_bwd:
                 nfqueue_id += nfq_id_inc
 
 
