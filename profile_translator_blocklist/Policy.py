@@ -457,7 +457,8 @@ class Policy:
         """
         Generate an identifier for this Policy.
 
-        :return: str: Policy identifier
+        Returns:
+            str: Identifier for this Policy.
         """
         highest_protocol = list(dict.keys(self.profile_data["protocols"]))[-1]
         id = highest_protocol
