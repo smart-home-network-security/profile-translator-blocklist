@@ -60,7 +60,7 @@ class Policy:
         self.parse()
 
         # Set policy name
-        self.name = policy_name if policy_name is not None else self.get_policy_name()
+        self.name = policy_name if policy_name is not None else self.get_name()
 
     
     def parse(self) -> None:
