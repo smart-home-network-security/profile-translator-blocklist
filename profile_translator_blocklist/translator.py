@@ -281,17 +281,18 @@ def translate_policy(
         "domain_names": []
     }
     policy, _ = parse_policy(policy_data, global_accs, nfqueue_id, rate, drop_proba, log_type, log_group)
+    policy_name = policy.get_name()
     if policy_dict.get("bidirectional", False):
         policy_data_backward = {
             "profile_data": policy_dict,
             "device": device,
-            "policy_name": f"{policy.get_name()}-backward",
+            "policy_name": f"{policy_name}-backward",
             "is_backward": True
         }
         parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
 
     ## Output
-    write_firewall(device, global_accs, drop_proba=drop_proba, output_dir=output_dir, log_type=log_type, log_group=log_group, test=test)
+    write_firewall(device, global_accs, policy_name, output_dir, drop_proba, log_type, log_group, test)
 
 
 def translate_policies(
@@ -341,13 +342,14 @@ def translate_policies(
             "device": device
         }
         policy, new_nfq_fwd = parse_policy(policy_data, global_accs, nfqueue_id, rate, drop_proba, log_type, log_group)
+        policy_name = policy.get_name()
 
         # Backward
         if policy_dict.get("bidirectional", False):
             policy_data_backward = {
                 "profile_data": policy_dict,
                 "device": device,
-                "policy_name": f"{policy.get_name()}-backward",
+                "policy_name": f"{policy_name}-backward",
                 "is_backward": True
             }
             _, new_nfq_bwd = parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
@@ -357,7 +359,7 @@ def translate_policies(
             nfqueue_id += nfq_id_inc
     
     # Output
-    write_firewall(device, global_accs, drop_proba=drop_proba, output_dir=output_dir, log_type=log_type, log_group=log_group, test=test)
+    write_firewall(device, global_accs, device.get("name", policy_name), output_dir, drop_proba, log_type, log_group, test)
 
 
 
