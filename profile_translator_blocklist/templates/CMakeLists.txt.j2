@@ -10,6 +10,10 @@ IF( OPENWRT_CROSSCOMPILING )
 target_link_libraries({{nfqueue_name}} jansson mnl nfnetlink nftnl nftables netfilter_queue netfilter_log)
 ENDIF()
 target_link_libraries({{nfqueue_name}} nfqueue packet_utils rule_utils)
-target_link_libraries({{nfqueue_name}} header {{custom_parsers}})
+{% if domain_names|length > 0 %}
+target_link_libraries({{nfqueue_name}} header dns dns_map)
+{% endif %}
+{% set parsers = custom_parsers - set(["dns"]) if "dns" in custom_parsers else custom_parsers %}
+target_link_libraries({{nfqueue_name}} header {{parsers}})
 target_include_directories({{nfqueue_name}} PRIVATE ${INCLUDE_DIR} ${INCLUDE_PARSERS_DIR})
 install(TARGETS {{nfqueue_name}} DESTINATION ${EXECUTABLE_OUTPUT_PATH})

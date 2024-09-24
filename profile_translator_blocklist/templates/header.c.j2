@@ -26,12 +26,14 @@
 {% if "dns" in parser %}
 {% set dns_parser_included.value = True %}
 #include "dns.h"
+#include "dns_map.h"
 {% else %}
 #include "{{parser}}.h"
 {% endif %}
 {% endfor %}
 {% if domain_names|length > 0 and not dns_parser_included.value %}
 #include "dns.h"
+#include "dns_map.h"
 {% endif %}
 
 
