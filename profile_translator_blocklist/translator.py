@@ -241,6 +241,7 @@ def write_firewall(
 def translate_policy(
         device:       dict,
         policy_dict:  dict,
+        nfqueue_name: str     = None,
         nfqueue_id:   int     = 0,
         output_dir:   str     = os.getcwd(),
         rate:         int     = None,
@@ -292,7 +293,8 @@ def translate_policy(
         parse_policy(policy_data_backward, global_accs, nfqueue_id + 1, rate, drop_proba, log_type, log_group)
 
     ## Output
-    write_firewall(device, global_accs, policy_name, output_dir, drop_proba, log_type, log_group, test)
+    nfqueue_name = policy_name if nfqueue_name is None else nfqueue_name
+    write_firewall(device, global_accs, nfqueue_name, output_dir, drop_proba, log_type, log_group, test)
 
 
 def translate_policies(
@@ -325,7 +327,6 @@ def translate_policies(
     args = validate_args(output_dir, nfqueue_id, rate, drop_proba)
     output_dir = args["output_dir"]
     drop_proba = args["drop_proba"]
-    nfqueue_name = device.get("name", nfqueue_name)
 
     # Initialize loop variables
     nfq_id_inc = 10
@@ -361,9 +362,8 @@ def translate_policies(
             nfqueue_id += nfq_id_inc
     
     # Output
+    nfqueue_name = device.get("name", policy_name) if nfqueue_name is None else nfqueue_name
     write_firewall(device, global_accs, nfqueue_name, output_dir, drop_proba, log_type, log_group, test)
-
-
 
 
 def translate_profile(

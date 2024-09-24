@@ -1,3 +1,5 @@
+{% set use_dns = domain_names|length > 0 %}
+
 /**
  * @brief SIGINT handler, flush stdout and exit.
  *
@@ -15,7 +17,11 @@ void sigint_handler(int arg) {
  * @param prog program name
  */
 void usage(char* prog) {
+    {% if use_dns %}
     fprintf(stderr, "Usage: %s [-s DNS_SERVER_IP] [-p DROP_PROBA]\n", prog);
+    {% else %}
+    fprintf(stderr, "Usage: %s [-p DROP_PROBA]\n", prog);
+    {% endif %}
 }
 
 
@@ -30,7 +36,9 @@ int main(int argc, char *argv[]) {
 
     // Initialize variables
     int ret;
+    {% if use_dns %}
     char *dns_server_ip = "8.8.8.8";  // Default DNS server: Google Quad8
+    {% endif %}
 
     // Setup SIGINT handler
     signal(SIGINT, sigint_handler);
@@ -38,7 +46,11 @@ int main(int argc, char *argv[]) {
 
     /* COMMAND LINE ARGUMENTS */
     int opt;
+    {% if use_dns %}
     while ((opt = getopt(argc, argv, "hp:s:")) != -1)
+    {% else %}
+    while ((opt = getopt(argc, argv, "hp:")) != -1)
+    {% endif %}
     {
         switch (opt)
         {
@@ -50,10 +62,12 @@ int main(int argc, char *argv[]) {
             /* Random verdict mode: drop probability (float between 0 and 1) */
             DROP_PROBA = atof(optarg);
             break;
+        {% if use_dns %}
         case 's':
             /* IP address of the network gateway */
             dns_server_ip = optarg;
             break;
+        {% endif %}
         default:
             usage(argv[0]);
             exit(EXIT_FAILURE);
@@ -72,14 +86,14 @@ int main(int argc, char *argv[]) {
 
     /* GLOBAL STRUCTURES INITIALIZATION */
 
-    {% if "dns" in custom_parsers or "mdns" in custom_parsers or domain_names|length > 0 %}
+    {% if "dns" in custom_parsers or "mdns" in custom_parsers or use_dns %}
     // Initialize variables for DNS
     dns_map = dns_map_create();
     dns_message_t dns_response;
     ip_list_t ip_list;
     dns_entry_t *dns_entry;
 
-    {% if domain_names|length > 0 %}
+    {% if use_dns %}
     // Open socket for DNS
     int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sockfd < 0) {
@@ -147,7 +161,7 @@ int main(int argc, char *argv[]) {
 
     /* FREE MEMORY */
 
-    {% if "dns" in custom_parsers or "mdns" in custom_parsers or domain_names|length > 0 %}
+    {% if "dns" in custom_parsers or "mdns" in custom_parsers or use_dns %}
     // Free DNS map
     dns_map_free(dns_map);
     {% endif %}

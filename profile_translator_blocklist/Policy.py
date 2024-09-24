@@ -462,6 +462,6 @@ class Policy:
         """
         highest_protocol = list(dict.keys(self.profile_data["protocols"]))[-1]
         id = highest_protocol
-        for _, value in dict.items(self.profile_data["protocols"][highest_protocol]):
-            id += f"_{value}"
+        for key, value in dict.items(self.profile_data["protocols"][highest_protocol]):
+            id += f"_{key}_{value}"
         return id
