@@ -298,6 +298,7 @@ def translate_policy(
 def translate_policies(
         device:       dict,
         policies:     Iterator[dict],
+        nfqueue_name: str     = None,
         nfqueue_id:   int     = 0,
         output_dir:   str     = os.getcwd(),
         rate:         int     = None,
@@ -324,6 +325,7 @@ def translate_policies(
     args = validate_args(output_dir, nfqueue_id, rate, drop_proba)
     output_dir = args["output_dir"]
     drop_proba = args["drop_proba"]
+    nfqueue_name = device.get("name", nfqueue_name)
 
     # Initialize loop variables
     nfq_id_inc = 10
@@ -359,7 +361,7 @@ def translate_policies(
             nfqueue_id += nfq_id_inc
     
     # Output
-    write_firewall(device, global_accs, device.get("name", policy_name), output_dir, drop_proba, log_type, log_group, test)
+    write_firewall(device, global_accs, nfqueue_name, output_dir, drop_proba, log_type, log_group, test)
 
 
 
