@@ -229,11 +229,10 @@ def write_firewall(
             fw.write(main)
 
         # Create CMake file
-        custom_parsers = " ".join(global_accs["custom_parsers"])
         cmake_dict = {
             "device":  device["name"],
             "nfqueue_name": nfqueue_name,
-            "custom_parsers": custom_parsers,
+            "custom_parsers": global_accs["custom_parsers"],
             "domain_names": global_accs["domain_names"]
         }
         env.get_template("CMakeLists.txt.j2").stream(cmake_dict).dump(os.path.join(output_dir, "CMakeLists.txt"))
