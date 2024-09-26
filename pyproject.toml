@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "profile_translator_blocklist"
+name = "profile-translator-blocklist"
 version = "0.3.0"
 description = "Translate IoT YAML profiles to NFTables / NFQueue files for a block-list firewall."
 readme = "README.md"
