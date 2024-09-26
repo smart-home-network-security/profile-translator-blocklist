@@ -13,7 +13,7 @@ import jinja2
 from typing import Tuple
 # Custom modules
 from .arg_types import uint16, proba, directory
-from .jinja_filters import debug, is_list
+from .jinja_utils import create_jinja_env
 from .LogType import LogType
 from .Policy import Policy
 from .NFQueue import NFQueue
@@ -22,16 +22,6 @@ from pyyaml_loaders import IncludeLoader
 
 # Package name
 package = importlib.import_module(__name__).__name__.rpartition(".")[0]
-
-## Jinja2 config
-loader = jinja2.PackageLoader(package, "templates")
-env = jinja2.Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
-# Add custom Jinja2 filters
-env.filters["debug"] = debug
-env.filters["is_list"] = is_list
-env.filters["any"] = any
-env.filters["all"] = all
-
 
 
 ##### FUNCTIONS #####
@@ -185,6 +175,15 @@ def write_firewall(
     args = validate_args(output_dir=output_dir, drop_proba=drop_proba)
     drop_proba = args["drop_proba"]
 
+    # Jinja2 environment
+    templates = {}
+    env = create_jinja_env(package)
+    templates["firewall.nft"]   = env.get_template("firewall.nft.j2")
+    templates["header.c"]       = env.get_template("header.c.j2")
+    templates["callback.c"]     = env.get_template("callback.c.j2")
+    templates["main.c"]         = env.get_template("main.c.j2")
+    templates["CMakeLists.txt"] = env.get_template("CMakeLists.txt.j2")
+
     # Create nftables script
     nft_dict = {
         "device": device,
@@ -194,7 +193,7 @@ def write_firewall(
         "log_group": log_group,
         "test": test
     }
-    env.get_template("firewall.nft.j2").stream(nft_dict).dump(os.path.join(output_dir, "firewall.nft"))
+    templates["firewall.nft"].stream(nft_dict).dump(os.path.join(output_dir, "firewall.nft"))
 
     # If needed, create NFQueue-related files
     num_threads = len([q for q in global_accs["nfqueues"] if q.queue_num >= 0])
@@ -207,20 +206,20 @@ def write_firewall(
             "drop_proba": drop_proba,
             "num_threads": num_threads,
         }
-        header = env.get_template("header.c.j2").render(header_dict)
+        header = templates["header.c"].render(header_dict)
         callback_dict = {
             "nft_table": f"bridge {device['name']}",
             "nfqueues": global_accs["nfqueues"],
             "drop_proba": drop_proba
         }
-        callback = env.get_template("callback.c.j2").render(callback_dict)
+        callback = templates["callback.c"].render(callback_dict)
         main_dict = {
             "custom_parsers": global_accs["custom_parsers"],
             "nfqueues": global_accs["nfqueues"],
             "domain_names": global_accs["domain_names"],
             "num_threads": num_threads
         }
-        main = env.get_template("main.c.j2").render(main_dict)
+        main = templates["main.c"].render(main_dict)
 
         # Write policy C file
         with open(os.path.join(output_dir, "nfqueues.c"), "w+") as fw:
@@ -235,7 +234,7 @@ def write_firewall(
             "custom_parsers": global_accs["custom_parsers"],
             "domain_names": global_accs["domain_names"]
         }
-        env.get_template("CMakeLists.txt.j2").stream(cmake_dict).dump(os.path.join(output_dir, "CMakeLists.txt"))
+        templates["CMakeLists.txt"].stream(cmake_dict).dump(os.path.join(output_dir, "CMakeLists.txt"))
 
 
 def translate_policy(
