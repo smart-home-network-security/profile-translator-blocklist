@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='profile-translator-blocklist',
-    version='0.3.0',
+    version='0.4.0',
     author='François De Keersmaeker',
     author_email='francois.dekeersmaeker@uclouvain.be',
     description='Translate IoT YAML profiles to NFTables / NFQueue files for a block-list firewall.',
