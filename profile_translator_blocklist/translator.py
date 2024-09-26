@@ -9,7 +9,6 @@ from typing import Iterator
 import os
 import importlib
 import yaml
-import jinja2
 from typing import Tuple
 # Custom modules
 from .arg_types import uint16, proba, directory

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='profile_translator_blocklist',
+    name='profile-translator-blocklist',
     version='0.3.0',
     author='François De Keersmaeker',
     author_email='francois.dekeersmaeker@uclouvain.be',

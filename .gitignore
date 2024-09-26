@@ -1,4 +1,5 @@
 # Python files
+.venv
 __pycache__
 .pytest_cache
 build
