@@ -8,6 +8,11 @@ from .LogType import LogType
 # Protocol translators
 from .protocols.Protocol import Protocol
 from .protocols.ip import ip
+# Logging
+import importlib
+import logging
+module_relative_path = importlib.import_module(__name__).__name__
+logger = logging.getLogger(module_relative_path)
 
 
 class Policy:
@@ -73,7 +78,7 @@ class Policy:
                 profile_protocol = self.profile_data["protocols"][protocol_name]
                 protocol = Protocol.init_protocol(protocol_name, profile_protocol, self.device)
             except ModuleNotFoundError:
-                print(f"Protocol {protocol_name} not found.")
+                logger.warning(f"Protocol {protocol_name} not found.")
                 # Unsupported protocol, skip it
                 continue
             else:

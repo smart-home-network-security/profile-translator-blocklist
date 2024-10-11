@@ -18,9 +18,13 @@ from .Policy import Policy
 from .NFQueue import NFQueue
 from pyyaml_loaders import IncludeLoader
 
-
 # Package name
-package = importlib.import_module(__name__).__name__.rpartition(".")[0]
+module_relative_path = importlib.import_module(__name__).__name__
+package = module_relative_path.rpartition(".")[0]
+
+# Logging
+import logging
+logger = logging.getLogger(module_relative_path)
 
 
 ##### FUNCTIONS #####
@@ -125,7 +129,7 @@ def validate_args(
     try:
         output_dir = directory(output_dir)
     except ValueError:
-        print(f"Output directory {output_dir} does not exist. Using current directory.")
+        logger.warning(f"Output directory {output_dir} does not exist. Using current directory.")
         output_dir = os.getcwd()
     args["output_dir"] = output_dir
 
@@ -461,4 +465,4 @@ def translate_profile(
 
     write_firewall(device, global_accs, nfqueue_name, output_dir, drop_proba, log_type, log_group, test)
 
-    print(f"Done translating {profile_path}.")
+    logger.info(f"Done translating {profile_path}.")
