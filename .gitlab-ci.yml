@@ -1,6 +1,9 @@
 stages:
   - test
 
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
 
 test-job:
   stage: test
