@@ -1,12 +1,8 @@
-stages:
-  - test
-
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 
 test-job:
-  stage: test
   script:
     - python3 -m venv .venv             # Create Python virtual environment
     - source .venv/bin/activate         # Activate Python virtual environment
@@ -15,3 +11,16 @@ test-job:
     - python3 -m build                  # Build package
     - pip3 install .                    # Install package
     - python3 test/test.py              # Run tests
+
+pages:
+  script:
+    - sudo apt-get update -y
+    - sudo apt-get install -y doxygen graphviz
+    - doxygen Doxyfile
+    - touch docs/html/.nojekyll
+    - mv docs/html public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
