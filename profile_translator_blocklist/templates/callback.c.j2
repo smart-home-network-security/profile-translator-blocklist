@@ -152,9 +152,6 @@ uint32_t callback_{{nfqueue_name}}(int pkt_id, int pkt_len, uint8_t *payload, vo
     /* Policy {{policy_name}} */
     {% if policy.nfq_matches %}
     if (
-        {% if policy.custom_parser == 'http' %}
-        !is_http_message || (
-        {% endif %}
         {% set rule = policy.nfq_matches[0] %}
         {% if rule['template'] | is_list %}
         (
@@ -187,9 +184,6 @@ uint32_t callback_{{nfqueue_name}}(int pkt_id, int pkt_len, uint8_t *payload, vo
         {{ rule['template'].format(rule['match']) }}
         {% endif %}
         {% endfor %}
-        {% if policy.custom_parser == 'http' %}
-        )
-        {% endif %}
     ) {
 
         {% set is_dns_response = namespace(value=False) %}
