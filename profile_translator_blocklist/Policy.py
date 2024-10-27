@@ -98,42 +98,13 @@ class Policy:
                     if device_addr is not None:
                         self_addrs.append(device_addr)
                 if protocol_name in protocols:
-                    ip_proto = "ipv6" if protocol_name == "ipv6" else "ipv4"
                     src = profile_protocol.get("spa", None) if protocol_name == "arp" else profile_protocol.get("src", None)
                     dst = profile_protocol.get("tpa", None) if protocol_name == "arp" else profile_protocol.get("dst", None)
                     
                     # Check if device is involved
                     if src in self_addrs or dst in self_addrs:
                         self.is_device = True
-                    
-                    # Device is not involved
-                    else:
-                        # Try expliciting source address
-                        try:
-                            saddr = ipaddress.ip_network(protocol.explicit_address(src))
-                        except ValueError:
-                            saddr = None
-                        
-                        # Try expliciting destination address
-                        try:
-                            daddr = ipaddress.ip_network(protocol.explicit_address(dst))
-                        except ValueError:
-                            daddr = None
 
-                        # Check if the involved other host is in the local network
-                        local_networks = ip.addrs[ip_proto]["local"]
-                        if isinstance(local_networks, list):
-                            lans = map(lambda cidr: ipaddress.ip_network(cidr), local_networks)
-                        else:
-                            lans = [ipaddress.ip_network(local_networks)]
-                        if saddr is not None and any(lan.supernet_of(saddr) for lan in lans):
-                            self.other_host["protocol"] = protocol_name
-                            self.other_host["direction"] = "src"
-                            self.other_host["address"] = saddr
-                        elif daddr is not None and any(lan.supernet_of(daddr) for lan in lans):
-                            self.other_host["protocol"] = protocol_name
-                            self.other_host["direction"] = "dst"
-                            self.other_host["address"] = daddr
 
                 # Add nft rules
                 new_rules = protocol.parse(is_backward=self.is_backward, initiator=self.initiator)
