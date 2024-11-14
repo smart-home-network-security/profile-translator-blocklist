@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     // Initialize variables
     int ret;
     {% if use_dns %}
-    char *dns_server_ip = "8.8.8.8";  // Default DNS server: Google Quad8
+    char *dns_server_ip = "192.168.1.1";  // Default DNS server: LAN gateway
     {% endif %}
 
     // Setup SIGINT handler
