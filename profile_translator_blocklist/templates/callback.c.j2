@@ -193,6 +193,7 @@ uint32_t callback_{{nfqueue_name}}(int pkt_id, int pkt_len, uint8_t *payload, vo
         {% set is_dns_response.value = True %}
         // Retrieve IP addresses corresponding to the given domain name from the DNS response
         char *domain_name = NULL;
+        char *subdomain = NULL;
         ip_list_t ip_list = ip_list_init();
         {% endif %}
         {% if is_dns_response.value %}
