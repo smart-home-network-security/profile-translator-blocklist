@@ -193,7 +193,6 @@ uint32_t callback_{{nfqueue_name}}(int pkt_id, int pkt_len, uint8_t *payload, vo
         {% set is_dns_response.value = True %}
         // Retrieve IP addresses corresponding to the given domain name from the DNS response
         char *domain_name = NULL;
-        char *subdomain = NULL;
         ip_list_t ip_list = ip_list_init();
         {% endif %}
         {% if is_dns_response.value %}
@@ -208,7 +207,6 @@ uint32_t callback_{{nfqueue_name}}(int pkt_id, int pkt_len, uint8_t *payload, vo
         else if ({{ template.format(domain_name) }}) {
         {% endif %}
             domain_name = "{{domain_name}}";
-            subdomain = "{{domain_name.split('.', 1)[1]}}";
             ip_list = dns_get_ip_from_name(dns_message.answers, dns_message.header.ancount, domain_name);
         }
         {% endif %}
@@ -217,7 +215,6 @@ uint32_t callback_{{nfqueue_name}}(int pkt_id, int pkt_len, uint8_t *payload, vo
         {% if "domain_name" in nfq_match["template"] %}
         {% set domain_name = nfq_match["match"] %}
         domain_name = "{{domain_name}}";
-        subdomain = "{{domain_name.split('.', 1)[1]}}";
         ip_list = dns_get_ip_from_name(dns_message.answers, dns_message.header.ancount, domain_name);
         {% endif %}
         {% endif %}
@@ -228,7 +225,7 @@ uint32_t callback_{{nfqueue_name}}(int pkt_id, int pkt_len, uint8_t *payload, vo
         {% if is_dns_response.value %}
         if (ip_list.ip_count > 0) {
             // Add IP addresses to DNS map
-            dns_map_add(dns_map, subdomain, ip_list);
+            dns_map_add(dns_map, domain_name, ip_list);
         }
         {% endif %}
 
