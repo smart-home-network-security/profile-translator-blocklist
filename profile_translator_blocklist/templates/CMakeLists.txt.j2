@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20)
 set(EXECUTABLE_OUTPUT_PATH ${BIN_DIR})
 
 # Nfqueue C file for device {{device}}
-{% set nfqueue_name = nfqueue.name.replace(':', '_').replace('#', '_').replace('.', '_').replace('/', '_').replace('*', '_').replace('?', '_').replace('=', '_') %}
+{% set nfqueue_name = nfqueue_name.replace(':', '_').replace('#', '_').replace('.', '_').replace('/', '_').replace('*', '_').replace('?', '_').replace('=', '_') %}
 add_executable({{nfqueue_name}} nfqueues.c)
 target_link_libraries({{nfqueue_name}} pthread)
 IF( OPENWRT_CROSSCOMPILING )
