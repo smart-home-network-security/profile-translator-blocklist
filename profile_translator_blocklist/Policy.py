@@ -436,8 +436,16 @@ class Policy:
         Returns:
             str: Identifier for this Policy.
         """
-        highest_protocol = list(dict.keys(self.profile_data["protocols"]))[-1]
-        id = highest_protocol
-        for key, value in dict.items(self.profile_data["protocols"][highest_protocol]):
-            id += f"_{key}_{value}"
+        profile_data_protocols: dict = self.profile_data["protocols"]
+        protocols = profile_data_protocols.keys()
+        id = ""
+
+        for protocol in protocols:
+            if id:
+                id += "_"
+            id += protocol
+            protocol_data: dict = profile_data_protocols[protocol]
+            for key, value in protocol_data.items():
+                id += f"_{key}_{value}"
+
         return id
