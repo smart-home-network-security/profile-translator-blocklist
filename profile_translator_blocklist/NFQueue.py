@@ -3,6 +3,7 @@ from copy import deepcopy
 from .LogType import LogType
 from .Policy import Policy
 
+
 class NFQueue:
     """
     Class which represents a single nfqueue.
@@ -49,8 +50,23 @@ class NFQueue:
         return ( self.name == other.name and
                  self.queue_num == other.queue_num and
                  self_matches == other_matches )
-
     
+
+    def get_name_slug(self) -> str:
+        """
+        Get a slugified version of the NFQueue name,
+        i.e. the name with all non-alphanumeric characters replaced by underscores.
+
+        :return: slugified version of the NFQueue name
+        """
+        name = self.name
+        pattern = r"[^a-zA-Z0-9_]"
+        special_chars = re.findall(pattern, name)
+        for char in special_chars:
+            name = name.replace(char, "_")
+        return name
+    
+
     def contains_policy_matches(self, policy: Policy) -> bool:
         """
         Check if this NFQueue object contains the nftables matches of the given policy.
