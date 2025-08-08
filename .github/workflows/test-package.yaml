@@ -10,6 +10,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive 
 
       - name: Install Python dependencies
         run: pip3 install -r $GITHUB_WORKSPACE/requirements.txt
