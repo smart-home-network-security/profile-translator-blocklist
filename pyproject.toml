@@ -9,13 +9,13 @@ version = "0.8.0"
 description = "Translate IoT YAML profiles to NFTables / NFQueue files for a block-list firewall."
 readme = "README.md"
 requires-python = ">=3.8"
-license = {file = "LICENSE"}
+license = "GPL-3.0-or-later"
 keywords = ["yaml", "firewall", "nftables", "nfqueue"]
 authors = [
-  {name = "François De Keersmaeker", email = "francois.dekeersmaeker@uclouvain.be" }
+  {name = "François De Keersmaeker", email = "francois.dekeersmaeker+github@proton.me" }
 ]
 maintainers = [
-  {name = "François De Keersmaeker", email = "francois.dekeersmaeker@uclouvain.be" }
+  {name = "François De Keersmaeker", email = "francois.dekeersmaeker+github@proton.me" }
 ]
 
 # Classifiers help users find your project by categorizing it.
@@ -29,7 +29,7 @@ classifiers = [
   "Development Status :: 3 - Alpha",
 
   # Pick your license as you wish
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  #"License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
 
   # Specify the Python versions you support here. In particular, ensure
   # that you indicate you support Python 3. These classifiers are *not*
