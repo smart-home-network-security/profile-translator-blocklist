@@ -8,6 +8,7 @@ of NFTables firewall script and NFQueue C source code.
 from typing import Iterable
 import os
 import importlib
+import re
 import yaml
 from typing import Tuple
 # Custom modules
@@ -28,6 +29,20 @@ logger = logging.getLogger(module_relative_path)
 
 
 ##### FUNCTIONS #####
+
+def slugify_name(name: str) -> str:
+    """
+    Slugify a (NFQueue) name by replacing all non-alphanumeric characters with underscores.
+
+    :param name: name to slugify
+    :return: slugified name
+    """
+    pattern = r"[^a-zA-Z0-9_]"
+    special_chars = re.findall(pattern, name)
+    for char in special_chars:
+        name = name.replace(char, "_")
+    return name
+
 
 def flatten_policies(single_policy_name: str, single_policy: dict, acc: dict = {}) -> None:
     """
@@ -233,7 +248,7 @@ def write_firewall(
         # Create CMake file
         cmake_dict = {
             "device":  device["name"],
-            "nfqueue_name": nfqueue_name,
+            "nfqueue_name": slugify_name(nfqueue_name),
             "custom_parsers": global_accs["custom_parsers"],
             "domain_names": global_accs["domain_names"]
         }
